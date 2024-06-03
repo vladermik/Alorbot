@@ -3,7 +3,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+alor-api/
 # C extensions
 *.so
 
@@ -189,3 +189,5 @@ pyrightconfig.json
 .history
 .ionide
 AlorApi/__pycache__/__init__.cpython-311.pyc
+alor-api
+AlorApi/settings.py
