@@ -6,3 +6,4 @@ URL_OAUTH = f'https://oauth{"dev" if TEST else ""}.alor.ru'
 URL_API = f'https://api{"dev" if TEST else ""}.alor.ru'
 INSTRUMENTS_URL = '/md/v2/Securities/'
 PORTFOLIO = 'D88915'
+'';
