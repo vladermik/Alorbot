@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import AlorApiWrapper.AlorApi as aa
 
 class Paper():
-    def __init__(self, ticker, timeframe) -> None:
+    def __init__(self, ticker, timeframe='1m') -> None:
         path_dir = f"data/datasets/{ticker.upper()}"
         path = f"{path_dir}/{timeframe}.csv"
         print(path, path_dir)
@@ -19,9 +19,12 @@ class Paper():
         self.indicators = []
     
     def sma(self, duration=20):
+        '''
+        отклонение цены от sma
+        '''
         sma = ta.trend.sma_indicator(close=self.data['close'],
                                     window=duration)
-        self.data[f'sma{duration}'] = sma
+        self.data[f'sma{duration}'] = (self.data['close'] - sma) / sma * 100
         print(self.data)
 
 paper = Paper("SBer", '1m')
