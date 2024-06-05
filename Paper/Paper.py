@@ -25,7 +25,21 @@ class Paper():
         sma = ta.trend.sma_indicator(close=self.data['close'],
                                     window=duration)
         self.data[f'sma{duration}'] = (self.data['close'] - sma) / sma * 100
-        print(self.data)
 
+    def ema(self, duration=20):
+        '''
+        отклонение цены от ema
+        '''
+        ema = ta.trend.ema_indicator(close=self.data['close'],
+                                    window=duration)
+        self.data[f'ema{duration}'] = (self.data['close'] - ema) / ema * 100
+    def wma(self, duration=20):
+        '''
+        отклонение цены от sma
+        '''
+        wma = ta.trend.wma_indicator(close=self.data['close'],
+                                    window=duration)
+        self.data[f'wma{duration}'] = (self.data['close'] - wma) / wma * 100
+        
 paper = Paper("SBer", '1m')
 print(paper.sma())
