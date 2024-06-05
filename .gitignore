@@ -190,3 +190,4 @@ pyrightconfig.json
 .ionide
 AlorApi/__pycache__/__init__.cpython-311.pyc
 alor-api
+.gitignore
