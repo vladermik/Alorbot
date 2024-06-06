@@ -3,6 +3,9 @@ import numpy as np
 import ta
 import os
 import sys
+from datetime import datetime
+
+import ta.momentum
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import AlorApiWrapper.AlorApi as aa
@@ -11,12 +14,14 @@ class Paper():
     def __init__(self, ticker, timeframe='1m') -> None:
         path_dir = f"data/datasets/{ticker.upper()}"
         path = f"{path_dir}/{timeframe}.csv"
-        print(path, path_dir)
         if os.path.exists(path_dir) and os.path.isfile(path):
             self.data = pd.read_csv(path)
         else:
             self.data = aa.AlorApi().get_history(ticker=ticker, timeframe=timeframe)
         self.indicators = []
+    
+    def convert_date(self):
+        self.data['time'] = self.data['time'].apply(lambda x: datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
     
     def sma(self, duration=20):
         '''
@@ -35,11 +40,16 @@ class Paper():
         self.data[f'ema{duration}'] = (self.data['close'] - ema) / ema * 100
     def wma(self, duration=20):
         '''
-        отклонение цены от sma
+        отклонение цены от wma
         '''
         wma = ta.trend.wma_indicator(close=self.data['close'],
                                     window=duration)
         self.data[f'wma{duration}'] = (self.data['close'] - wma) / wma * 100
+        
+    def rsi(self, duration=14):
+        rsi = ta.momentum.rsi(close=self.data['close'], 
+                              window=duration)
+        self.data[f'rsi{duration}'] = rsi
         
 paper = Paper("SBer", '1m')
 print(paper.sma())
