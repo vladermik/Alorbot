@@ -29,11 +29,12 @@ class Paper():
         self.step = df['minStep']
         self.roundTo = df['roundTo']
         self.marginBuy = df['marginBuy']
-        self.marginSell = df['MarginSell']
+        self.marginSell = df['marginSell']
         self.lotSize = df['lotSize']
 
     def convert_date(self):
         self.data['time'] = self.data['time'].apply(lambda x: datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
+        self.data['time'] = pd.to_datetime(self.data['time'])
     
     def sma(self, duration=20):
         '''
