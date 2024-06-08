@@ -19,7 +19,19 @@ class Paper():
         else:
             self.data = aa.AlorApi().get_history(ticker=ticker, timeframe=timeframe)
         self.indicators = []
-    
+        self.ticker = ticker.upper()
+        self._get_params()
+
+    def _get_params(self):
+        df = pd.read_csv(r"data\info_about_instruments\all_instruments.csv")
+        df = df[df['symbol'] == self.ticker]
+        self.shortName = df['shortName']
+        self.step = df['minStep']
+        self.roundTo = df['roundTo']
+        self.marginBuy = df['marginBuy']
+        self.marginSell = df['MarginSell']
+        self.lotSize = df['lotSize']
+
     def convert_date(self):
         self.data['time'] = self.data['time'].apply(lambda x: datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
     
@@ -52,4 +64,4 @@ class Paper():
         self.data[f'rsi{duration}'] = rsi
         
 paper = Paper("SBer", '1m')
-print(paper.sma())
+print(paper._get_params())
