@@ -39,14 +39,16 @@ class Test():
         '''
         pass
     def emergency(self, price):
-        for end_day_price in self.positions.keys():
+        print(11111)
+        positions_to_close = list(self.positions.keys())
+        for end_day_price in positions_to_close:
             self.close_position(price, end_day_price) 
 
     def run(self):
         for index, row in self.paper.data.iterrows():
             price = row['close']
-            if (row['time'].dt.hour == 18 and row['time'].dt.minute == 39 and not self.evening_session) or \
-            (row['time'].dt.hour == 23 and row['time'].dt.minute == 49 and self.evening_session):
+            if (row['hour'] == 18 and row['minute'] == 39 and not self.evening_session) or \
+            (row['hour'] == 23 and row['minute'] == 49 and self.evening_session):
                 self.emergency(price)
                 self.history.append(self.balance)
             else:     

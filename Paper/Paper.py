@@ -35,6 +35,9 @@ class Paper():
     def convert_date(self):
         self.data['time'] = self.data['time'].apply(lambda x: datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
         self.data['time'] = pd.to_datetime(self.data['time'])
+        self.data['hour'] = self.data['time'].dt.hour
+        self.data['minute'] = self.data['time'].dt.minute
+
     
     def sma(self, duration=20):
         '''
@@ -63,6 +66,6 @@ class Paper():
         rsi = ta.momentum.rsi(close=self.data['close'], 
                               window=duration)
         self.data[f'rsi{duration}'] = rsi
-        
-paper = Paper("SBer", '1m')
-print(paper._get_params())
+if __name__ == '__main__':
+    paper = Paper("SBer", '1m')
+    print(paper._get_params())
