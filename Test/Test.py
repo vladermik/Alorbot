@@ -6,13 +6,14 @@ from Paper.Paper import Paper
 
 
 class Test():
-    def __init__(self, paper:Paper, tp:float=1, sl:float=0.5, balance:int=100_000, evening_session=False) -> None:
+    def __init__(self, paper:Paper, tp:float=1, sl:float=0.5, balance:int=100_000, window:int=None, evening_session=False) -> None:
         self.paper = paper
         self.tp = tp
         self.sl = sl
         self.balance = balance
         self.history = []
         self.evening_session = evening_session
+        self.window = window
         self.positions = {}  # Словарь для хранения позиций: {цена: (количество, направление, стоп-лосс, тейк-профит)}
 
     def open_position(self, price, quantity, direction):
@@ -46,7 +47,8 @@ class Test():
 
     def run(self):
         for index, row in self.paper.data.iterrows():
-            price = row['close']
+            if self.window:
+                price = row.iloc[index+self.window, 'close']
             if (row['hour'] == 18 and row['minute'] == 39 and not self.evening_session) or \
             (row['hour'] == 23 and row['minute'] == 49 and self.evening_session):
                 self.emergency(price)
