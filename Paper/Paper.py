@@ -38,7 +38,40 @@ class Paper():
         self.data['hour'] = self.data['time'].dt.hour
         self.data['minute'] = self.data['time'].dt.minute
 
-    
+    def _mark(self, data:pd.DataFrame, sl, tp):
+        data.reset_index(drop=True, inplace=True)
+        sl_long, sl_short = sl
+        tp_long, tp_short = tp
+        l = len(data) / 5
+        for i, el in data.iterrows():
+            price = el['close']
+            if price <= sl_long:
+                break
+            elif price >= tp_long:
+                return 5 - int(i // l)
+        for i, el in data.iterrows():
+            price = el['close']
+            if price >= sl_short:
+                break
+            elif price <= tp_short:
+                return -5 + int(i // l)
+        return 0
+
+    def mark(self, sl=0.5, tp=1, window=50):
+        self.data['mark'] = None
+        for i, row in self.data.iterrows():
+            print(f"{i} ... {len(self.data)}")
+            price = row['close']
+            sls = (price * (1 - sl/100), price * (1 + sl/100))
+            tps = (price * (1 + tp/100), price * (1 - tp/100))
+            try:
+                self.data.loc[i, 'mark'] = self._mark(self.data.loc[i:i + window, :], sls, tps)
+            except IndexError:
+                break
+
+    def clear(self):
+        return self.data.drop(['open', 'high', 'low', 'close'], axis=1), self.data['mark']
+
     def sma(self, duration=20):
         '''
         отклонение цены от sma
