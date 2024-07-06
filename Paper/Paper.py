@@ -38,40 +38,43 @@ class Paper():
         self.data['hour'] = self.data['time'].dt.hour
         self.data['minute'] = self.data['time'].dt.minute
 
-    def _mark(self, data: pd.DataFrame, sl, tp):
+    def _mark(self, data_slice, sl, tp):
         sl_long, sl_short = sl
         tp_long, tp_short = tp
-        l = len(data) // 5
-        for i, el in enumerate(data.itertuples(index=False), 1):
-            price, high, low = el.close, el.high, el.low
-            if low <= sl_long:
+        l = len(data_slice) // 5
+
+        lows = data_slice['low'].values
+        highs = data_slice['high'].values
+
+        for i in range(len(data_slice)):
+            if lows[i] <= sl_long:
                 break
-            elif high >= tp_long:
+            elif highs[i] >= tp_long:
                 return 5 - int(i // l)
-        for i, el in enumerate(data.itertuples(index=False), 1):
-            price, high, low = el.close, el.high, el.low
-            if high >= sl_short:
+
+        for i in range(len(data_slice)):
+            if highs[i] >= sl_short:
                 break
-            elif low <= tp_short:
+            elif lows[i] <= tp_short:
                 return -5 + int(i // l)
+        
         return 0
 
     def mark(self, sl=0.5, tp=1, window=50):
-        marks = []
         data_len = len(self.data)
-        for i in range(data_len):
+        marks = np.full(data_len, None)
+
+        for i in range(data_len - window):
             print(f"{i} ... {data_len}")
             price = self.data.at[i, 'close']
             sls = (price * (1 - sl / 100), price * (1 + sl / 100))
             tps = (price * (1 + tp / 100), price * (1 - tp / 100))
-            if i + window > data_len:
-                break
+            
             data_slice = self.data.iloc[i:i + window]
             mark = self._mark(data_slice, sls, tps)
-            marks.append(mark)
-        while len(marks) < data_len:
-            marks.append(None)
-        self.data['mark'] = pd.Series(marks)
+            marks[i] = mark
+
+        self.data['mark'] = marks
 
     def clear(self):
         return self.data.drop(['open', 'high', 'low', 'close'], axis=1), self.data['mark']
