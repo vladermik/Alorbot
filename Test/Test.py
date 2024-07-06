@@ -23,7 +23,6 @@ class Test:
         tps = (price * (1 + self.tp / 100), price * (1 - self.tp / 100))
         stop_loss = sls[0] if direction == 'long' else sls[1]
         take_profit = tps[0] if direction == 'long' else tps[1]
-        self.balance -= price * quantity
         new_position = pd.DataFrame({'id': self.id, 'date': date, 'open': price, 'sl': stop_loss, 'tp': take_profit,
                         'close': None, 'nshares': quantity, 'profit': None, 'direction': direction}, index=[0])
         self.opened_positions = pd.concat([self.opened_positions, new_position], ignore_index=True)
@@ -73,7 +72,7 @@ class Test:
             high, low = row['high'], row['low']
             if (row['hour'] == 15 and row['minute'] == 39 and not self.evening_session) or \
                     (row['hour'] == 20 and row['minute'] == 49 and self.evening_session):
-                print(f"end of {row['time']}")
+                print(f"end of {row['time'].date()}")
                 self.emergency(price)
                 self.history.append(self.balance)
             else:
