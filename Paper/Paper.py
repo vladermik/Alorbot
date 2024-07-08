@@ -63,7 +63,6 @@ class Paper():
     def mark(self, sl=0.5, tp=1, window=50):
         data_len = len(self.data)
         marks = np.full(data_len, None)
-
         for i in range(data_len - window):
             print(f"{i} ... {data_len}")
             price = self.data.at[i, 'close']
@@ -71,13 +70,15 @@ class Paper():
             tps = (price * (1 + tp / 100), price * (1 - tp / 100))
             
             data_slice = self.data.iloc[i:i + window]
-            mark = self._mark(data_slice, sls, tps)
+            if data_slice.loc[i, 'hour'] >= 15 and data_slice.loc[i, 'minute'] >= 39:
+                mark = None
+            else:
+                mark = self._mark(data_slice, sls, tps)
             marks[i] = mark
-
         self.data['mark'] = marks
 
     def clear(self):
-        return self.data.drop(['open', 'high', 'low', 'close'], axis=1), self.data['mark']
+        return self.data.drop(['open', 'high', 'low', 'close', 'mark'], axis=1), self.data['mark']
 
     def sma(self, duration=20):
         '''

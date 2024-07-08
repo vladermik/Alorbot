@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from Paper.Paper import Paper
-
 class Test:
     def __init__(self, paper, tp=1, sl=0.5, balance=100_000, window=None, evening_session=False):
         self.paper = paper
@@ -60,12 +59,12 @@ class Test:
         -1, amount if short
         '''
         pass
-
     def emergency(self, price):
         for pos_id in self.opened_positions['id']:
             self.close_position(price, pos_id)
 
     def run(self):
+        self.decide(self.paper.data)
         for i in range(self.window, len(self.paper.data) - self.window):
             row = self.paper.data.iloc[i]
             price = row['close']
@@ -87,8 +86,20 @@ class Test:
                         print(f'{direction.capitalize()} position {"stop-loss" if direction == "short" else "take-profit"} triggered at {high}')
                         self.close_position(high, pos_id)
 
-                direction, amount = self.decide(self.paper.data.iloc[i - self.window:i])
+                direction, amount = self.step(i)
                 if direction == 1:
                     self.open_position(row['time'], price, amount, 'long')
                 elif direction == -1:
                     self.open_position(row['time'], price, amount, 'short')
+    
+    def a(self):
+        for el in self.paper.data.index[:-self.window]:
+            print(el)
+            row = self.paper.data.loc[el, :]
+            pos = int(self.balance // row['close'])
+            if self.paper.data.loc[el+self.window, 'time'].date() != row['time'].date():
+                continue    
+            if (row['mark'] < 0 and row['predict'] < 0) or (row['mark'] > 0 and row['predict'] > 0):
+                self.balance += self.tp / 100 * pos
+            elif (row['mark'] < 0 and row['predict'] > 0) or (row['mark'] > 0 and row['predict'] < 0) or (row['mark'] == 0 and row['predict'] != 0):
+                self.balance -= self.sl / 100 * pos
