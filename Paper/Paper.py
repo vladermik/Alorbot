@@ -78,6 +78,7 @@ class Paper():
             marks[i] = mark
         self.data['mark'] = marks
 
+
     def clear(self):
         return self.data.drop(['open', 'high', 'low', 'close', 'mark'], axis=1), self.data['mark']
 
