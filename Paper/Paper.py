@@ -33,10 +33,11 @@ class Paper():
         self.lotSize = df['lotSize']
 
     def convert_date(self):
-        self.data['time'] = self.data['time'].apply(lambda x: datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
-        self.data['time'] = pd.to_datetime(self.data['time'])
-        self.data['hour'] = self.data['time'].dt.hour
-        self.data['minute'] = self.data['time'].dt.minute
+        self.data['datetime'] = self.data['time'].apply(lambda x: datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S'))
+        self.data.drop('time', axis=1, inplace=True)
+        self.data['datetime'] = pd.to_datetime(self.data['datetime'])
+        self.data['hour'] = self.data['datetime'].dt.hour
+        self.data['minute'] = self.data['datetime'].dt.minute
 
     def _mark(self, data_slice, sl, tp):
         sl_long, sl_short = sl
