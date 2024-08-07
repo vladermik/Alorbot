@@ -77,10 +77,23 @@ class Paper():
                 mark = self._mark(data_slice, sls, tps)
             marks[i] = mark
         self.data['mark'] = marks
+        self.indicators.append('mark')
+        self.indicators.append('predict')
 
 
     def clear(self):
         return self.data.drop(['open', 'high', 'low', 'close', 'mark'], axis=1), self.data['mark']
+
+    def change(self):
+        self.data['change'] = (self.data['close'] - self.data['open']) / self.data['open']
+    
+    def ushadow(self):
+        price = self.data[['open', 'close']].max(axis=1)
+        self.data['ushadow'] = (self.data['high'] - price) / price
+
+    def lshadow(self):
+        price = self.data[['open', 'close']].min(axis=1)
+        self.data['lshadow'] = (price - self.data['low']) / price
 
     def sma(self, duration=20):
         '''
@@ -89,6 +102,7 @@ class Paper():
         sma = ta.trend.sma_indicator(close=self.data['close'],
                                     window=duration)
         self.data[f'sma{duration}'] = (self.data['close'] - sma) / sma * 100
+        self.indicators.append(f'sma{duration}')
 
     def ema(self, duration=20):
         '''
@@ -97,6 +111,8 @@ class Paper():
         ema = ta.trend.ema_indicator(close=self.data['close'],
                                     window=duration)
         self.data[f'ema{duration}'] = (self.data['close'] - ema) / ema * 100
+        self.indicators.append(f'ema{duration}')
+
     def wma(self, duration=20):
         '''
         отклонение цены от wma
@@ -104,11 +120,14 @@ class Paper():
         wma = ta.trend.wma_indicator(close=self.data['close'],
                                     window=duration)
         self.data[f'wma{duration}'] = (self.data['close'] - wma) / wma * 100
-        
+        self.indicators.append(f'wma{duration}')
+
     def rsi(self, duration=14):
         rsi = ta.momentum.rsi(close=self.data['close'], 
                               window=duration)
         self.data[f'rsi{duration}'] = rsi
+        self.indicators.append(f'rsi{duration}')
+
 if __name__ == '__main__':
     paper = Paper("SBer", '1m')
     print(paper._get_params())

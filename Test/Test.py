@@ -7,44 +7,95 @@ import backtrader as bt
 import pyfolio as pf
 from Paper.Paper import Paper
 import matplotlib.pyplot as plt
-class PandasData(bt.feeds.PandasData):
-        lines = ('rsi14',)
-        params = (
-        ('datetime', None),  # Убедитесь, что 'time' является индексом времени
-        ('close', 0),
-        ('open', 1),
-        ('high', 2),
-        ('low', 3),
-        ('volume', 4),
-        ('hour', 5),
-        ('minute', 6),
-        ('rsi14', 7),  # Индекс для rsi14
-        # ('ema20', 'ema20'),
-        # ('ema50', 'ema50'),
-        # ('ema100', 'ema100'),
-        # ('ema200', 'ema200'),
-    )
+# class PandasData(bt.feeds.PandasData):
+#         lines = ('rsi14',)
+#         params = (
+#         ('datetime', None),  # Убедитесь, что 'time' является индексом времени
+#         ('close', 0),
+#         ('open', 1),
+#         ('high', 2),
+#         ('low', 3),
+#         ('volume', 4),
+#         ('hour', 5),
+#         ('minute', 6),
+#         ('rsi14', 7),  # Индекс для rsi14
+#         # ('ema20', 'ema20'),
+#         # ('ema50', 'ema50'),
+#         # ('ema100', 'ema100'),
+#         # ('ema200', 'ema200'),
+#     )
 class Strategy(bt.Strategy):
+    params = (
+        ('order_size', 100),
+        ('sl', 0.002),
+        ('tp', 0.005),
+        ('window', 50)
+    )
     def log(self, txt, dt=None):
         ''' Logging function fot this strategy'''
         dt = dt or self.datas[0].datetime.date(0)
         print('%s, %s' % (dt.isoformat(), txt))
 
     def __init__(self):
-        # Keep a reference to the "close" line in the data[0] dataseries
         self.dataclose = self.datas[0].close
-        self.rsi = self.datas[0].rsi14
-        # To keep track of pending orders and buy price/commission
+        self.predict = self.datas[0].predict
         self.order = None
         self.buyprice = None
         self.buycomm = None
 
+    def buy_order(self, price):
+        mainside = self.buy(
+            price=price,
+            size=self.params.order_size,
+            exectype=bt.Order.Market,
+            transmit=False
+        )
+        stop_price = price * (1.0 - self.params.sl)
+        lowside = self.sell(
+            price=stop_price,
+            size=self.params.order_size,
+            exectype=bt.Order.Stop,
+            transmit=False,
+            parent=mainside
+        )
+        take_profit_price = price * (1.0 + self.params.tp)
+        highside = self.sell(
+            price=take_profit_price,
+            size=self.params.order_size,
+            exectype=bt.Order.Limit,
+            transmit=True,
+            parent=mainside
+        )
+        self.order = mainside
+
+    def sell_order(self, price):
+        mainside = self.sell(
+            price=price,
+            size=self.params.order_size,
+            exectype=bt.Order.Market,
+            transmit=False
+        )
+        stop_price = price * (1.0 + self.params.sl)
+        lowside = self.buy(
+            price=stop_price,
+            size=self.params.order_size,
+            exectype=bt.Order.Stop,
+            transmit=False,
+            parent=mainside
+        )
+        take_profit_price = price * (1.0 - self.params.tp)
+        highside = self.buy(
+            price=take_profit_price,
+            size=self.params.order_size,
+            exectype=bt.Order.Limit,
+            transmit=True,
+            parent=mainside
+        )
+        self.order = mainside
+
     def notify_order(self, order):
         if order.status in [order.Submitted, order.Accepted]:
-            # Buy/Sell order submitted/accepted to/by broker - Nothing to do
             return
-        # Check if an order has been completed
-        # Attention: broker could reject order if not enough cash
         if order.status in [order.Completed]:
             if order.isbuy():
                 self.log(
@@ -69,31 +120,40 @@ class Strategy(bt.Strategy):
             return
         self.log('OPERATION PROFIT, GROSS %.2f, NET %.2f' %
                  (trade.pnl, trade.pnlcomm))
+    def decide(self):
+        '''
+        1 - buy
+        0 - nothing to do
+        -1 - sell
+        '''
+        prediction = model.predict(input_data)
+        signal = np.argmax(prediction, axis=1)[0]  # Assuming the model returns probabilities for each class
+
 
     def next(self):
         self.log('Close, %.2f' % self.dataclose[0])
-        # Check if an order is pending ... if yes, we cannot send a 2nd one
+        if self.end_of_the_day():
+            return
         if self.order:
             return
-        # Check if we are in the market
-        if not self.position:
-            # Not yet ... we MIGHT BUY if ...
-            if self.dataclose[0] < self.dataclose[-1]:
-                    # current close less than previous close
-                    if self.dataclose[-1] < self.dataclose[-2]:
-                        self.log(f'RSI .................. {list(self.datas[0])}')
-                        # previous close less than the previous close
-                        # BUY, BUY, BUY!!! (with default parameters)
-                        self.log('BUY CREATE, %.2f' % self.dataclose[0])
-                        # Keep track of the created order to avoid a 2nd order
-                        self.order = self.buy()
+
+        desicion = self.decide()
+        if desicion == 1:
+            self.log('BUY CREATE, %.2f' % self.dataclose[0])
+            self.order = self.buy_order(self.dataclose[0])
+        elif desicion == -1:
+            self.log('SELL CREATE, %.2f' % self.dataclose[0])
+            self.order = self.sell_order(self.dataclose[0])
         else:
-            # Already in the market ... we might sell
-            if len(self) >= (self.bar_executed + 5):
-                # SELL, SELL, SELL!!! (with all possible default parameters)
-                self.log('SELL CREATE, %.2f' % self.dataclose[0])
-                # Keep track of the created order to avoid a 2nd order
-                self.order = self.sell()
+            pass
+
+    def end_of_the_day(self):
+        current_time = self.datas[0].datetime.time(0)
+        if current_time.hour == 23 and current_time.minute == 59:
+            self.log('CLOSE ALL POSITIONS, %.2f' % self.dataclose[0])
+            self.close()
+            return 1
+        return 0
     
 class Test():
     def __init__(self, paper, strategy=None, tp=1, sl=0.5, balance=100_000, evening_session=False):
@@ -105,6 +165,24 @@ class Test():
         self.paper = paper
 
     def run(self):
+        indicators = self.paper.indicators
+        indicators_for_lines = tuple(indicators)
+        indicators_for_params = tuple((indicators[i], -1) for i in range(len(indicators)))
+        class PandasData(bt.feeds.PandasData):
+            '''
+            1
+            '''
+            lines = indicators_for_lines
+            params =(      
+            ('datetime', None),
+            ('close', 0),
+            ('open', 1),
+            ('high', 2),
+            ('low', 3),
+            ('volume', -1),
+            ('hour', -1),
+            ('minute', -1),
+            ) + indicators_for_params
         cerebro = bt.Cerebro()
         cerebro.broker.setcash(self.balance)
         cerebro.broker.setcommission(commission=0.0005)  # 0.1% комиссия
@@ -116,7 +194,7 @@ class Test():
         self.results = cerebro.run()
         print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
         self.cerebro = cerebro
-        cerebro.plot()
+        # cerebro.plot()
 
 
     def visualize(self):
