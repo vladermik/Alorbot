@@ -7,23 +7,7 @@ import backtrader as bt
 import pyfolio as pf
 from Paper.Paper import Paper
 import matplotlib.pyplot as plt
-# class PandasData(bt.feeds.PandasData):
-#         lines = ('rsi14',)
-#         params = (
-#         ('datetime', None),  # Убедитесь, что 'time' является индексом времени
-#         ('close', 0),
-#         ('open', 1),
-#         ('high', 2),
-#         ('low', 3),
-#         ('volume', 4),
-#         ('hour', 5),
-#         ('minute', 6),
-#         ('rsi14', 7),  # Индекс для rsi14
-#         # ('ema20', 'ema20'),
-#         # ('ema50', 'ema50'),
-#         # ('ema100', 'ema100'),
-#         # ('ema200', 'ema200'),
-#     )
+
 class Strategy(bt.Strategy):
     params = (
         ('order_size', 100),
@@ -202,10 +186,8 @@ class Test():
             strat = self.results[0]
             pyfoliozer = strat.analyzers.getbyname('pyfolio')
             returns, positions, transactions, gross_lev = pyfoliozer.get_pf_items()
-            print(returns.head())
-            print(positions.head())
-            print(transactions.head())
-            # pyfolio showtime
+            # pf.plot_returns(returns)
+            # pf.plot_drawdown_periods(returns)
             pf.create_full_tear_sheet(
                 returns,
                 positions=positions,
@@ -213,10 +195,8 @@ class Test():
                 gross_lev=gross_lev,
                 live_start_date='2018-01-03',  # This date is sample specific
                 round_trips=True)
-            plt.show()
         except Exception:
             self.cerebro.plot()
-            plt.show()
 
 
 
