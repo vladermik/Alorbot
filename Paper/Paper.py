@@ -65,7 +65,7 @@ class Paper():
         data_len = len(self.data)
         marks = np.full(data_len, None)
         for i in range(data_len - window):
-            print(f"{i} ... {data_len}")
+            # print(f"{i} ... {data_len}")
             price = self.data.at[i, 'close']
             sls = (price * (1 - sl / 100), price * (1 + sl / 100))
             tps = (price * (1 + tp / 100), price * (1 - tp / 100))
@@ -80,6 +80,22 @@ class Paper():
         self.indicators.append('mark')
         self.indicators.append('predict')
 
+    def mark_report(self, sls=[0.2, 0.3], tps=[0.4, 0.6], window=50, save=True):
+        report = {'tp': [], 'sl': [], 'rate': [], 'profit': []}
+        for sl in sls:
+            for tp in tps:
+                self.mark(sl=sl, tp=tp, window=window)
+                report['tp'].append(tp)
+                report['sl'].append(sl)
+                report['rate'].append(round(tp/sl, 2))
+                profit = len(self.data[self.data['mark'] != 0]) * tp
+                report['profit'].append(profit)
+                self.data.drop('mark', axis=1, inplace=True)
+                print(f"sl={sl}...tp={tp}")
+        df = pd.DataFrame(report)
+        if save:
+            df.to_csv(rf'data/datasets/{self.ticker}/mark_report.csv')
+        return df  
 
     def clear(self):
         return self.data.drop(['open', 'high', 'low', 'close', 'mark'], axis=1), self.data['mark']
